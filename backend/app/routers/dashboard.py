@@ -55,11 +55,15 @@ def get_dashboard(
     weak_domains.sort(key=lambda x: x["accuracy"])
     
     # Calculate overall stats
-    total_questions = db.query(Question).filter(
+    # Total includes ALL questions (667)
+    total_questions = db.query(Question).count()
+    
+    # Exam questions (excludes study-type) for progress tracking
+    exam_questions = db.query(Question).filter(
         Question.question_type != 'study'
     ).count()
     
-    # Count unseen questions (never answered)
+    # Count unseen exam questions (never answered)
     unseen_questions = db.query(Question).filter(
         Question.question_type != 'study',
         Question.times_shown == 0
@@ -95,8 +99,9 @@ def get_dashboard(
     return {
         "overview": {
             "total_questions": total_questions,
+            "exam_questions": exam_questions,
             "unseen_questions": unseen_questions,
-            "seen_questions": total_questions - unseen_questions,
+            "seen_questions": exam_questions - unseen_questions,
             "total_sessions": total_sessions,
             "average_score": round(avg_score),
             "passing_rate": round(

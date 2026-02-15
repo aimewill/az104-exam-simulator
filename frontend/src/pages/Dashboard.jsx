@@ -161,30 +161,30 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Progress through all questions */}
-      {overview.total_questions > 0 && (
+      {/* Progress through exam questions */}
+      {(overview.exam_questions || overview.total_questions) > 0 && (
         <div className="card">
-          <h3>📊 Question Coverage</h3>
+          <h3>📊 Exam Question Coverage</h3>
           <div style={{ marginTop: '12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
-              <span>{overview.seen_questions || 0} of {overview.total_questions} questions seen</span>
+              <span>{overview.seen_questions || 0} of {overview.exam_questions || overview.total_questions} exam questions seen</span>
               <span style={{ fontWeight: '600' }}>
-                {Math.round(((overview.seen_questions || 0) / overview.total_questions) * 100)}%
+                {Math.round(((overview.seen_questions || 0) / (overview.exam_questions || overview.total_questions)) * 100)}%
               </span>
             </div>
             <div className="progress-bar" style={{ height: '10px' }}>
               <div 
                 className="fill" 
                 style={{ 
-                  width: `${((overview.seen_questions || 0) / overview.total_questions) * 100}%`,
+                  width: `${((overview.seen_questions || 0) / (overview.exam_questions || overview.total_questions)) * 100}%`,
                   background: 'linear-gradient(90deg, var(--primary), var(--primary-hover))'
                 }} 
               />
             </div>
             <p style={{ marginTop: '10px', fontSize: '12px', color: 'var(--text-secondary)' }}>
               {overview.unseen_questions > 0 
-                ? `${Math.ceil(overview.unseen_questions / 60)} more sessions to see all questions`
-                : '✅ You have seen all questions! Use "Review Wrong" to focus on missed ones.'
+                ? `${Math.ceil(overview.unseen_questions / 60)} more sessions to see all exam questions`
+                : '✅ You have seen all exam questions! Use "Review Wrong" to focus on missed ones.'
               }
             </p>
           </div>
