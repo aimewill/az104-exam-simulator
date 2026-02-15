@@ -1,0 +1,61 @@
+{
+  "domains": [
+    {
+      "id": "identity-governance",
+      "name": "Manage Azure identities and governance",
+      "keywords": [
+        "azure ad", "active directory", "entra", "identity", "rbac", "role-based",
+        "subscription", "management group", "policy", "blueprint", "governance",
+        "user", "group", "service principal", "managed identity", "conditional access",
+        "mfa", "multi-factor", "pim", "privileged", "tenant", "directory",
+        "cost management", "billing", "resource lock", "tag"
+      ]
+    },
+    {
+      "id": "storage",
+      "name": "Implement and manage storage",
+      "keywords": [
+        "storage account", "blob", "container", "file share", "queue", "table",
+        "azure files", "azcopy", "storage explorer", "sas", "shared access",
+        "replication", "lrs", "grs", "zrs", "ra-grs", "access tier", "hot", "cool",
+        "archive", "lifecycle", "immutable", "soft delete", "versioning",
+        "storage sync", "import export", "data box"
+      ]
+    },
+    {
+      "id": "compute",
+      "name": "Deploy and manage Azure compute resources",
+      "keywords": [
+        "virtual machine", "vm", "vmss", "scale set", "availability set",
+        "availability zone", "app service", "web app", "container", "aci",
+        "kubernetes", "aks", "function", "arm template", "bicep", "deployment",
+        "extension", "custom script", "dsc", "desired state", "image", "snapshot",
+        "disk", "managed disk", "proximity placement", "dedicated host",
+        "spot instance", "reserved instance"
+      ]
+    },
+    {
+      "id": "networking",
+      "name": "Configure and manage virtual networking",
+      "keywords": [
+        "vnet", "virtual network", "subnet", "nsg", "network security group",
+        "asg", "application security group", "load balancer", "application gateway",
+        "vpn", "expressroute", "peering", "dns", "private dns", "firewall",
+        "bastion", "nat gateway", "route table", "udr", "user-defined route",
+        "service endpoint", "private endpoint", "private link", "traffic manager",
+        "front door", "cdn", "ip address", "public ip", "network watcher"
+      ]
+    },
+    {
+      "id": "monitoring",
+      "name": "Monitor and back up Azure resources",
+      "keywords": [
+        "monitor", "log analytics", "diagnostic", "metrics", "alert", "action group",
+        "insights", "application insights", "workbook", "dashboard",
+        "backup", "recovery services", "site recovery", "asr", "snapshot",
+        "restore", "retention", "backup policy", "geo-redundant", "soft delete"
+      ]
+    }
+  ],
+  "default_domain": "identity-governance"
+}

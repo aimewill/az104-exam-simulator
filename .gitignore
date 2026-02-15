@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+.env
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+
+# Node
+node_modules/
+npm-debug.log*
+.npm
+
+# Frontend build output (rebuilt in CI)
+frontend/dist/
+
+# Database and data files (use Railway volumes in production)
+*.db
+*.sqlite
+*.sqlite3
+data/
+!data/.gitkeep
+
+# PDFs (user content, not tracked)
+pdfs/*.pdf
+
+# Exhibit images (generated from PDFs)
+backend/app/static/exhibits/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+/tmp/
+
+# Local scripts output
+.pids/
