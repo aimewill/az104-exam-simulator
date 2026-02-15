@@ -214,9 +214,31 @@ These paths must remain as-is for local development:
 - **Exhibits**: `backend/app/static/exhibits/` (NOT data/exhibits/)
 
 For Railway deployment, use environment variables:
-- `DATABASE_URL` - PostgreSQL connection string
+- `DATABASE_URL` - PostgreSQL connection string (auto-set by Railway)
+- `JWT_SECRET_KEY` - Secure random string for auth tokens
 - `PDFS_DIR` - Path to PDFs on Railway volume
 - `EXHIBITS_DIR` - Path to exhibits on Railway volume
+
+## 🚀 Railway Deployment
+**Live URL**: https://az104-exam-simulator-production.up.railway.app
+
+### Why only 5 demo questions on fresh deploy?
+Railway creates a **fresh database** - it doesn't have your local questions!
+To migrate your 667 questions to Railway:
+```bash
+# 1. Link to Postgres service
+railway link  # Select Postgres
+
+# 2. Get the public DATABASE_URL
+railway run -- python -c "import os; print(os.environ.get('DATABASE_PUBLIC_URL'))"
+
+# 3. Run migration
+python scripts/migrate_to_railway.py "<POSTGRES_URL_FROM_STEP_2>"
+
+# 4. Link back to app and redeploy
+railway link  # Select az104-exam-simulator
+railway up --detach
+```
 
 ---
 
