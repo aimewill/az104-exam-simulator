@@ -111,20 +111,45 @@ class SessionService:
         else:
             return self._select_random(count)
     
-    def _select_random(self, count: int) -> List[int]:
-        """Select random questions (excluding study-type and invalid questions).
+    def _select_random(self, count: int, user_id: Optional[int] = None) -> List[int]:
+        """Select random UNSEEN questions (excluding study-type and invalid questions).
         
+        Only picks questions the user hasn't answered yet (times_shown == 0).
+        Falls back to all questions if not enough unseen questions remain.
         Questions in the same series are kept together in sequence.
         """
-        questions = self.db.query(Question).filter(
-            Question.question_type != 'study'
+        # First, try to get only unseen questions (times_shown == 0)
+        unseen = self.db.query(Question).filter(
+            Question.question_type != 'study',
+            Question.times_shown == 0
         ).order_by(Question.sequence_number).all()
         
         # Only include questions with at least 2 choices
-        questions = [q for q in questions if len(q.choices or []) >= 2]
+        unseen = [q for q in unseen if len(q.choices or []) >= 2]
         
-        # Group questions by series
-        return self._group_and_select_with_series(questions, count)
+        if len(unseen) >= count:
+            # Enough unseen questions - pick from those
+            return self._group_and_select_with_series(unseen, count)
+        
+        # Not enough unseen - use all unseen plus some seen (sorted by fewest times_shown)
+        if unseen:
+            # Get additional questions sorted by times_shown (least shown first)
+            seen = self.db.query(Question).filter(
+                Question.question_type != 'study',
+                Question.times_shown > 0
+            ).order_by(Question.times_shown, Question.sequence_number).all()
+            seen = [q for q in seen if len(q.choices or []) >= 2]
+            
+            # Combine unseen + least-seen
+            all_questions = unseen + seen
+        else:
+            # All questions have been seen - fall back to least-seen first
+            all_questions = self.db.query(Question).filter(
+                Question.question_type != 'study'
+            ).order_by(Question.times_shown, Question.sequence_number).all()
+            all_questions = [q for q in all_questions if len(q.choices or []) >= 2]
+        
+        return self._group_and_select_with_series(all_questions, count)
     
     def _select_unseen_first(self, count: int) -> List[int]:
         """Prioritize questions that haven't been shown (excluding study-type).
