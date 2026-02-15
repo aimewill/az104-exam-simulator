@@ -1,10 +1,18 @@
 const API_BASE = '/api';
 
+// Token storage helpers
+export const getToken = () => localStorage.getItem('token');
+export const setToken = (token) => localStorage.setItem('token', token);
+export const removeToken = () => localStorage.removeItem('token');
+
 async function request(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
+  const token = getToken();
+  
   const config = {
     headers: {
       'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` }),
     },
     ...options,
   };
@@ -64,4 +72,17 @@ export const dashboardApi = {
   getDomains: () => request('/domains'),
   exportMissed: () => request('/export/missed.csv'),
   getQuestionStats: () => request('/stats/questions'),
+};
+
+// Auth endpoints
+export const authApi = {
+  register: (email, password, displayName = null) => request('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify({ email, password, display_name: displayName }),
+  }),
+  login: (email, password) => request('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  }),
+  me: () => request('/auth/me'),
 };

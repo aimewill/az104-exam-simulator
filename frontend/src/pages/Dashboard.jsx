@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { dashboardApi, sessionApi } from '../api/client'
+import { useAuth } from '../context/AuthContext'
 
 function Dashboard() {
   const [data, setData] = useState(null)
@@ -10,6 +11,7 @@ function Dashboard() {
   const [timedMode, setTimedMode] = useState(false)
   const [timeLimit, setTimeLimit] = useState(100) // Default 100 minutes like real exam
   const navigate = useNavigate()
+  const { isAuthenticated } = useAuth()
 
   useEffect(() => {
     loadDashboard()
@@ -105,22 +107,33 @@ function Dashboard() {
           )}
         </div>
         
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          <button className="btn btn-primary" onClick={() => startExam('random')}
-            disabled={startingSession || overview.total_questions === 0}>Random</button>
-          <button className="btn btn-secondary" onClick={() => startExam('unseen')}
-            disabled={startingSession || overview.total_questions === 0}>Unseen First</button>
-          <button className="btn btn-secondary" onClick={() => startExam('weak')}
-            disabled={startingSession || overview.total_questions === 0}>Weak Areas</button>
-          <button className="btn btn-secondary" onClick={() => startExam('review_wrong')}
-            disabled={startingSession || overview.total_questions === 0}>Review Wrong</button>
-          <button className="btn btn-secondary" onClick={() => navigate('/study')}
-            style={{ background: 'linear-gradient(135deg, #8b5cf6, #6366f1)', color: 'white', border: 'none' }}>📚 Study Mode</button>
-        </div>
-        {overview.total_questions === 0 && (
-          <p style={{ marginTop: '12px', color: 'var(--danger)' }}>
-            No questions available. Please import questions first.
-          </p>
+        {!isAuthenticated ? (
+          <div style={{ padding: '20px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', textAlign: 'center' }}>
+            <p style={{ marginBottom: '12px', color: 'var(--text-secondary)' }}>
+              🔐 Please sign in to start an exam and track your progress
+            </p>
+            <Link to="/login" className="btn btn-primary">Sign In to Start</Link>
+          </div>
+        ) : (
+          <>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <button className="btn btn-primary" onClick={() => startExam('random')}
+                disabled={startingSession || overview.total_questions === 0}>Random</button>
+              <button className="btn btn-secondary" onClick={() => startExam('unseen')}
+                disabled={startingSession || overview.total_questions === 0}>Unseen First</button>
+              <button className="btn btn-secondary" onClick={() => startExam('weak')}
+                disabled={startingSession || overview.total_questions === 0}>Weak Areas</button>
+              <button className="btn btn-secondary" onClick={() => startExam('review_wrong')}
+                disabled={startingSession || overview.total_questions === 0}>Review Wrong</button>
+              <button className="btn btn-secondary" onClick={() => navigate('/study')}
+                style={{ background: 'linear-gradient(135deg, #8b5cf6, #6366f1)', color: 'white', border: 'none' }}>📚 Study Mode</button>
+            </div>
+            {overview.total_questions === 0 && (
+              <p style={{ marginTop: '12px', color: 'var(--danger)' }}>
+                No questions available. Please import questions first.
+              </p>
+            )}
+          </>
         )}
       </div>
 

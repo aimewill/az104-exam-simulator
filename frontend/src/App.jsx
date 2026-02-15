@@ -5,9 +5,12 @@ import ImportWizard from './pages/ImportWizard'
 import ExamSession from './pages/ExamSession'
 import Results from './pages/Results'
 import StudySession from './pages/StudySession'
+import Login from './pages/Login'
+import Register from './pages/Register'
 import { importApi } from './api/client'
+import { AuthProvider, useAuth } from './context/AuthContext'
 
-function App() {
+function AppContent() {
   const [needsImport, setNeedsImport] = useState(null)
   const [loading, setLoading] = useState(true)
   const [darkMode, setDarkMode] = useState(() => {
@@ -15,6 +18,7 @@ function App() {
     return saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)
   })
   const navigate = useNavigate()
+  const { user, isAuthenticated, logout, loading: authLoading } = useAuth()
 
   useEffect(() => {
     checkImportStatus()
@@ -41,7 +45,7 @@ function App() {
     }
   }
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="loading">
         <p>Loading...</p>
@@ -57,6 +61,20 @@ function App() {
           <nav className="nav-links">
             <Link to="/">Dashboard</Link>
             <Link to="/import">Import</Link>
+            {isAuthenticated ? (
+              <>
+                <span className="user-info" title={user.email}>
+                  👤 {user.display_name}
+                </span>
+                <button className="nav-button" onClick={logout}>
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <Link to="/login" className="nav-button">
+                Sign In
+              </Link>
+            )}
             <button className="theme-toggle" onClick={toggleTheme} title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}>
               {darkMode ? '☀️' : '🌙'}
             </button>
@@ -71,9 +89,19 @@ function App() {
           <Route path="/exam/:sessionId" element={<ExamSession />} />
           <Route path="/results/:sessionId" element={<Results />} />
           <Route path="/study" element={<StudySession />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
         </Routes>
       </main>
     </div>
+  )
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   )
 }
 

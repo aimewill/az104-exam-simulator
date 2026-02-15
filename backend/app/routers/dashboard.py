@@ -1,26 +1,43 @@
 """API routes for dashboard and statistics."""
 import csv
 import io
-from typing import List
+from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
 from ..database import get_db
-from ..models import Question, ExamSession, DomainStats
+from ..models import Question, ExamSession, DomainStats, User
 from ..services.domain_classifier import get_classifier
+from ..auth import get_current_user
 
 router = APIRouter(prefix="/api", tags=["dashboard"])
 
 
 @router.get("/dashboard")
-def get_dashboard(db: Session = Depends(get_db)):
-    """Get dashboard data including recent sessions, stats, and weak areas."""
-    # Get last 10 completed sessions
-    recent_sessions = db.query(ExamSession).filter(
+def get_dashboard(
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user),
+):
+    """Get dashboard data including recent sessions, stats, and weak areas.
+    
+    If authenticated, shows only the current user's sessions.
+    If not authenticated, shows all sessions (backwards compatible).
+    """
+    # Build base query for sessions
+    session_query = db.query(ExamSession).filter(
         ExamSession.completed_at.isnot(None)
-    ).order_by(desc(ExamSession.completed_at)).limit(10).all()
+    )
+    
+    # Filter by user if authenticated
+    if current_user:
+        session_query = session_query.filter(ExamSession.user_id == current_user.id)
+    
+    # Get last 10 completed sessions
+    recent_sessions = session_query.order_by(
+        desc(ExamSession.completed_at)
+    ).limit(10).all()
     
     # Get domain stats
     domain_stats = db.query(DomainStats).all()
@@ -39,14 +56,16 @@ def get_dashboard(db: Session = Depends(get_db)):
     
     # Calculate overall stats
     total_questions = db.query(Question).count()
-    total_sessions = db.query(ExamSession).filter(
-        ExamSession.completed_at.isnot(None)
-    ).count()
     
-    # Calculate average score
-    completed_sessions = db.query(ExamSession).filter(
+    # Build query for completed sessions (filtered by user if authenticated)
+    completed_query = db.query(ExamSession).filter(
         ExamSession.completed_at.isnot(None)
-    ).all()
+    )
+    if current_user:
+        completed_query = completed_query.filter(ExamSession.user_id == current_user.id)
+    
+    total_sessions = completed_query.count()
+    completed_sessions = completed_query.all()
     
     avg_score = 0
     if completed_sessions:

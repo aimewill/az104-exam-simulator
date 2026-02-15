@@ -8,6 +8,28 @@ from sqlalchemy.orm import relationship
 from .database import Base
 
 
+class User(Base):
+    """A user account."""
+    __tablename__ = "users"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(255), unique=True, index=True, nullable=False)
+    password_hash = Column(String(255), nullable=False)
+    display_name = Column(String(100), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    sessions = relationship("ExamSession", back_populates="user")
+    
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "email": self.email,
+            "display_name": self.display_name or self.email.split("@")[0],
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
 class Question(Base):
     """A single exam question."""
     __tablename__ = "questions"
@@ -63,6 +85,7 @@ class ExamSession(Base):
     __tablename__ = "exam_sessions"
     
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     mode = Column(String(30), nullable=False)  # random, unseen, weak, review_wrong
     started_at = Column(DateTime, default=datetime.utcnow)
     completed_at = Column(DateTime, nullable=True)
@@ -82,6 +105,9 @@ class ExamSession(Base):
     # Question order and answers stored as JSON
     question_ids = Column(JSON, nullable=False)  # Ordered list of question IDs
     answers = Column(JSON, default=dict)  # {question_id: {"selected": ["A"], "flagged": false}}
+    
+    # Relationships
+    user = relationship("User", back_populates="sessions")
     
     @property
     def time_remaining_seconds(self) -> Optional[int]:

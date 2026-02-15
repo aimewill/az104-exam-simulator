@@ -48,9 +48,37 @@ curl -s http://127.0.0.1:8000/api/dashboard     | jq .
 - Questions in Series: 37 (grouped into 11 series)
 - Question numbering: Uses Q# format (Q1, Q2, Q94, etc.)
 
-## Recent fixes and changes (Feb 13, 2026 - Latest)
+## Recent fixes and changes (Feb 15, 2026 - Latest)
 
-### 🎨 NEW: Modern Design Refresh ✅
+### 🔐 NEW: User Authentication ✅
+- **Feature**: User login/registration system for tracking individual progress
+- **How it works**:
+  - JWT-based authentication (stateless, Railway-ready)
+  - Register with email/password, optional display name
+  - Login persists via localStorage token
+  - **Login required to start exams** (enforced on frontend and backend)
+  - Sessions and history are tracked per-user
+  - Dashboard shows user-specific stats
+- **Endpoints**:
+  - `POST /api/auth/register` - Create account
+  - `POST /api/auth/login` - Get access token
+  - `GET /api/auth/me` - Get current user info
+- **Files touched**:
+  - `backend/app/models.py` — Added `User` model, `user_id` FK on `ExamSession`
+  - `backend/app/auth.py` — JWT token utilities, password hashing
+  - `backend/app/routers/auth.py` — Auth API endpoints
+  - `backend/app/routers/session.py` — Associate sessions with users
+  - `backend/app/routers/dashboard.py` — Filter stats by user
+  - `backend/app/config.py` — JWT_SECRET_KEY config
+  - `backend/requirements.txt` — Added auth dependencies
+  - `frontend/src/context/AuthContext.jsx` — Auth state management
+  - `frontend/src/pages/Login.jsx` — Login page
+  - `frontend/src/pages/Register.jsx` — Registration page
+  - `frontend/src/api/client.js` — Auth API + token handling
+  - `frontend/src/App.jsx` — Auth integration, header user info
+  - `frontend/src/index.css` — Auth page styles
+
+### 🎨 Modern Design Refresh ✅
 - **Feature**: Polished, modern UI inspired by Warp docs design
 - **Design changes**:
   - New color palette with purple/indigo accents
@@ -179,6 +207,17 @@ curl -s http://127.0.0.1:8000/api/dashboard     | jq .
 ## PDF source
 `pdfs/AZ-104 englische Version PDF www.it-pruefungen.ch.pdf`
 
+## ⚠️ Critical Paths (DO NOT CHANGE)
+These paths must remain as-is for local development:
+- **Database**: `data/az104.db` (NOT exam.db)
+- **PDFs**: `pdfs/` at project root (NOT data/pdfs/)
+- **Exhibits**: `backend/app/static/exhibits/` (NOT data/exhibits/)
+
+For Railway deployment, use environment variables:
+- `DATABASE_URL` - PostgreSQL connection string
+- `PDFS_DIR` - Path to PDFs on Railway volume
+- `EXHIBITS_DIR` - Path to exhibits on Railway volume
+
 ---
 
 ## Dev handoff (continue work in a new session)
@@ -224,6 +263,7 @@ See **[ROADMAP.md](ROADMAP.md)** for detailed feature plans and implementation p
 - And more...
 
 ### Completed:
+- ✅ User Authentication (Feb 15, 2026) - JWT-based login/register for Railway deployment
 - ✅ Modern Design Refresh (Feb 13, 2026) - Warp-inspired UI
 - ✅ Timer & Timed Mode (Feb 13, 2026)
 - ✅ Dark Mode (Feb 13, 2026)

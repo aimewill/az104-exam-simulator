@@ -18,7 +18,8 @@ class SessionService:
     def start_session(
         self,
         mode: str,
-        time_limit_minutes: Optional[int] = None
+        time_limit_minutes: Optional[int] = None,
+        user_id: Optional[int] = None,
     ) -> ExamSession:
         """Start a new exam session with selected questions."""
         # Get questions based on mode
@@ -31,6 +32,7 @@ class SessionService:
         session = ExamSession(
             mode=mode,
             time_limit_minutes=time_limit_minutes,
+            user_id=user_id,
             total_questions=len(question_ids),
             question_ids=question_ids,
             answers={},

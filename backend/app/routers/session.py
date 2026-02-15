@@ -5,8 +5,9 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import Question, ExamSession
+from ..models import Question, ExamSession, User
 from ..services.session_service import SessionService
+from ..auth import get_current_user, require_auth
 
 router = APIRouter(prefix="/api/session", tags=["session"])
 
@@ -54,14 +55,19 @@ def get_study_questions(db: Session = Depends(get_db)):
 
 
 @router.post("/start", response_model=SessionResponse)
-def start_session(request: StartSessionRequest, db: Session = Depends(get_db)):
-    """Start a new exam session."""
+def start_session(
+    request: StartSessionRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_auth),
+):
+    """Start a new exam session. Requires authentication."""
     service = SessionService(db)
     
     try:
         session = service.start_session(
             mode=request.mode,
-            time_limit_minutes=request.time_limit_minutes
+            time_limit_minutes=request.time_limit_minutes,
+            user_id=current_user.id,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

@@ -21,6 +21,7 @@ A local, offline exam simulator for Microsoft Azure Administrator (AZ-104) certi
 - **Offline**: Runs entirely on your Mac, no external APIs needed
 
 ### Advanced Features 🆕
+- **🔐 User Authentication**: Register/login to track your personal progress (required to start exams)
 - **🌙 Dark Mode**: Toggle between light and dark themes (persists in localStorage, respects system preference)
 - **🖼️ Exhibit Images**: Automatically extracts and displays 208 diagram/screenshot/table images from PDFs (correctly matched to questions)
 - **🔗 Question Series**: Related questions (same scenario) stay together for context (37 questions in 11 series)

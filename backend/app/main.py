@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse
 
 from .database import init_db
 from .config import EXHIBITS_DIR, PORT
-from .routers import import_router, session, dashboard
+from .routers import import_router, session, dashboard, auth
 from .frontend_mount import mount_frontend
 
 # Configure logging
@@ -55,6 +55,7 @@ if EXHIBITS_DIR.exists():
     app.mount("/static/exhibits", StaticFiles(directory=str(EXHIBITS_DIR)), name="exhibits")
 
 # Include routers
+app.include_router(auth.router)
 app.include_router(import_router.router)
 app.include_router(session.router)
 app.include_router(dashboard.router)
