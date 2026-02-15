@@ -43,12 +43,28 @@ curl -s http://127.0.0.1:8000/api/dashboard     | jq .
 ```
 
 ## Question counts (667 total)
-- **Total Exam Questions: 667**
+- **Total Questions: 667**
+  - **Exam Questions: 446** (single, multi, truefalse) - used in Random/Unseen/Weak/Review modes
+  - **Study Questions: 221** (DRAG DROP/HOTSPOT) - only in Study Mode
 - Questions with Images: 218 (exhibits + table images)
 - Questions in Series: 37 (grouped into 11 series)
 - Question numbering: Uses Q# format (Q1, Q2, Q94, etc.)
 
 ## Recent fixes and changes (Feb 15, 2026 - Latest)
+
+### 🎯 NEW: Random Mode = Unseen Only ✅
+- **Feature**: Random mode now only picks questions you haven't seen yet
+- **How it works**:
+  - Clicking "Random" gives you 60 NEW unseen questions (times_shown == 0)
+  - Once all 446 exam questions are seen, falls back to least-seen questions
+  - Dashboard shows progress: "342 Unseen" with "104 seen" below
+  - Progress bar shows "104 of 446 exam questions seen (23%)"
+  - Shows "6 more sessions to see all exam questions"
+- **Goal**: Work through all 446 questions without repetition, then review wrong ones
+- **Files touched**:
+  - `backend/app/services/session_service.py` — `_select_random()` filters by times_shown
+  - `backend/app/routers/dashboard.py` — Added unseen_questions, seen_questions, exam_questions
+  - `frontend/src/pages/Dashboard.jsx` — Progress bar and unseen count display
 
 ### 🔐 NEW: User Authentication ✅
 - **Feature**: User login/registration system for tracking individual progress
