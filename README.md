@@ -241,7 +241,7 @@ Edit `config/domains.json` to customize domain keywords:
 - Images are only extracted for questions referencing "exhibit" keywords
 - Clear browser cache if images don't update after re-import
 
-### Exhibit Images Showing Wrong Content
+### Exhibit Images Showing Wrong Content or Missing
 
 If an exhibit image shows data that doesn't match the question (e.g., Q327 about VM1/VNET1 shows a table with VM3/VM4/VM5):
 
@@ -263,6 +263,34 @@ If an exhibit image shows data that doesn't match the question (e.g., Q327 about
    ```
 
 This happens because the image extraction must match question text to the correct PDF page, and Railway's PostgreSQL database needs to be synced with the new image paths.
+
+If you still see wrong images after re-extraction:
+- Verify the PDF page chosen by the parser (it now considers prev/current/next pages and scores candidates).
+- Run the verification snippet (below) to list any remaining suspects (non-table images when a table is expected or missing files).
+
+```bash
+python - <<'PY'
+from backend.app.database import SessionLocal
+from backend.app.models import Question
+from backend.app.config import EXHIBITS_DIR
+from PIL import Image
+
+sess=SessionLocal()
+qs=sess.query(Question).filter(Question.exhibit_image.isnot(None)).all()
+keys=['following table','contains the following','shown in the following']
+issues=[]
+for q in qs:
+    f=EXHIBITS_DIR/(q.exhibit_image.replace('/static/exhibits/',''))
+    if not f.exists():
+        issues.append((q.source_page,'missing'))
+        continue
+    w,h=Image.open(f).size
+    if any(k in q.text.lower() for k in keys) and not (w>300 and h>50 and w/max(h,1)>1.5):
+        issues.append((q.source_page,f'non-table {w}x{h}'))
+print('Suspects:',len(issues))
+print(sorted(issues)[:20])
+PY
+```
 
 ### Question Series Not Grouping
 

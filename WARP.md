@@ -119,7 +119,7 @@ curl -s http://127.0.0.1:8000/api/dashboard     | jq .
   - `frontend/src/api/client.js` — Timer API methods
   - `frontend/src/index.css` — Pulse animation
 
-### 🖼️ NEW: Exhibit & Table Image Extraction ✅
+### 🖼️ Exhibit & Table Image Extraction ✅
 - **Feature**: Automatically extracts and displays images from PDFs (exhibits + table data)
 - **How it works**: 
   - Detects questions referencing "exhibit", "following users", "following resources", etc.
@@ -133,6 +133,8 @@ curl -s http://127.0.0.1:8000/api/dashboard     | jq .
 - **Files**: Images served via FastAPI StaticFiles at `/static/exhibits/`
 - **Feb 13 Fix**: Complete rewrite of image extraction to match question text to actual PDF pages (fixed 145 mismatches)
 - **Feb 15 Fix**: Re-extracted all 210 images with `scripts/reextract_images.py` to fix remaining mismatches (e.g., Q327/Q328 showing wrong VM table)
+- **Feb 15 Heuristic Update**: Parser now scores candidate images across previous/current/next pages and prefers table-like images when the question says "following table". Re-extracted all exhibits. Verified Q140 and Q327–Q329 against the PDF.
+- **Data cleanup**: Removed stale `/static/exhibits/q*_img0.jpeg` references and nulled missing paths to prevent 404s.
 
 ### 🔗 NEW: Question Series Grouping ✅
 - **Feature**: Related questions (same scenario) now appear consecutively
