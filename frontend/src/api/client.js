@@ -52,6 +52,7 @@ export const sessionApi = {
   get: (sessionId) => request(`/session/${sessionId}`),
   getQuestions: (sessionId) => request(`/session/${sessionId}/questions`),
   getStudyQuestions: () => request('/session/study'),
+  markStudySeen: (questionId) => request(`/session/study/${questionId}/seen`, { method: 'POST' }),
   getQuestion: (sessionId, index) => request(`/session/${sessionId}/question/${index}`),
   answer: (sessionId, questionId, selected, flagged = false) => request(`/session/answer?session_id=${sessionId}`, {
     method: 'POST',

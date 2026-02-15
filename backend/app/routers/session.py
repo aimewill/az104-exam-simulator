@@ -37,7 +37,9 @@ def get_study_questions(db: Session = Depends(get_db)):
     """Get all study-type questions (DRAG DROP, HOTSPOT) for review."""
     questions = db.query(Question).filter(
         Question.question_type == "study"
-    ).all()
+    ).order_by(Question.times_shown, Question.id).all()
+    
+    seen_count = sum(1 for q in questions if q.times_shown > 0)
     
     return {
         "questions": [
@@ -47,11 +49,31 @@ def get_study_questions(db: Session = Depends(get_db)):
                 "explanation": q.explanation,
                 "question_type": q.question_type,
                 "domain_id": q.domain_id,
+                "times_shown": q.times_shown,
             }
             for q in questions
         ],
         "total": len(questions),
+        "seen": seen_count,
+        "unseen": len(questions) - seen_count,
     }
+
+
+@router.post("/study/{question_id}/seen")
+def mark_study_question_seen(question_id: int, db: Session = Depends(get_db)):
+    """Mark a study question as seen (increment times_shown)."""
+    question = db.query(Question).filter(
+        Question.id == question_id,
+        Question.question_type == "study"
+    ).first()
+    
+    if not question:
+        raise HTTPException(status_code=404, detail="Study question not found")
+    
+    question.times_shown += 1
+    db.commit()
+    
+    return {"success": True, "times_shown": question.times_shown}
 
 
 @router.post("/start", response_model=SessionResponse)

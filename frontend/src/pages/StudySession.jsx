@@ -9,6 +9,8 @@ function StudySession() {
   const [showAnswer, setShowAnswer] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [seenIds, setSeenIds] = useState(new Set()) // Track locally seen in this session
+  const [stats, setStats] = useState({ total: 0, seen: 0, unseen: 0 })
 
   useEffect(() => { loadStudyQuestions() }, [])
 
@@ -28,12 +30,30 @@ function StudySession() {
     try {
       const data = await sessionApi.getStudyQuestions()
       setQuestions(data.questions)
+      setStats({ total: data.total, seen: data.seen, unseen: data.unseen })
+      // Pre-populate seenIds with already-seen questions
+      const alreadySeen = new Set(data.questions.filter(q => q.times_shown > 0).map(q => q.id))
+      setSeenIds(alreadySeen)
     } catch (err) { setError(err.message) }
     finally { setLoading(false) }
   }
 
+  const markCurrentAsSeen = async () => {
+    const question = questions[currentIndex]
+    if (question && !seenIds.has(question.id)) {
+      try {
+        await sessionApi.markStudySeen(question.id)
+        setSeenIds(prev => new Set([...prev, question.id]))
+        setStats(prev => ({ ...prev, seen: prev.seen + 1, unseen: prev.unseen - 1 }))
+      } catch (err) {
+        console.error('Failed to mark as seen:', err)
+      }
+    }
+  }
+
   const goNext = () => {
     if (currentIndex < questions.length - 1) {
+      markCurrentAsSeen() // Mark current as seen when moving to next
       setCurrentIndex(currentIndex + 1)
       setShowAnswer(false)
     }
@@ -115,10 +135,25 @@ function StudySession() {
 
         <div style={{ width: '280px' }}>
           <div className="card">
-            <h3 style={{ marginBottom: '12px' }}>Progress</h3>
+            <h3 style={{ marginBottom: '12px' }}>📊 Coverage</h3>
             <div style={{ marginBottom: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', marginBottom: '4px' }}>
-                <span>Reviewed</span>
+                <span>Seen</span>
+                <span style={{ fontWeight: '600' }}>{seenIds.size} / {stats.total}</span>
+              </div>
+              <div className="progress-bar">
+                <div className="fill" style={{ 
+                  width: `${(seenIds.size / stats.total) * 100}%`,
+                  background: 'linear-gradient(90deg, var(--primary), var(--primary-hover))'
+                }} />
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '6px' }}>
+                {stats.total - seenIds.size} unseen
+              </div>
+            </div>
+            <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', marginBottom: '4px' }}>
+                <span>Session Progress</span>
                 <span>{currentIndex + 1} / {questions.length}</span>
               </div>
               <div className="progress-bar">
