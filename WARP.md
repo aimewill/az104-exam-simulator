@@ -44,7 +44,7 @@ curl -s http://127.0.0.1:8000/api/dashboard     | jq .
 
 ## Question counts (667 total)
 - **Total Exam Questions: 667**
-- Questions with Images: 208 (exhibits + table images, 99.5% accuracy)
+- Questions with Images: 218 (exhibits + table images)
 - Questions in Series: 37 (grouped into 11 series)
 - Question numbering: Uses Q# format (Q1, Q2, Q94, etc.)
 
@@ -129,11 +129,12 @@ curl -s http://127.0.0.1:8000/api/dashboard     | jq .
   - Table images detected by dimensions (wide, short aspect ratio)
   - Saves images to `backend/app/static/exhibits/` with unique filenames
   - Displays images above question text in exam and results pages
-- **Result**: 210 questions now show their correct images
+- **Result**: 218 questions now show their correct images
 - **Files**: Images served via FastAPI StaticFiles at `/static/exhibits/`
 - **Feb 13 Fix**: Complete rewrite of image extraction to match question text to actual PDF pages (fixed 145 mismatches)
 - **Feb 15 Fix**: Re-extracted all 210 images with `scripts/reextract_images.py` to fix remaining mismatches (e.g., Q327/Q328 showing wrong VM table)
 - **Feb 15 Heuristic Update**: Parser now scores candidate images across previous/current/next pages and prefers table-like images when the question says "following table". Re-extracted all exhibits. Verified Q140 and Q327–Q329 against the PDF.
+- **Feb 15 Batch Fix**: Added "following locations" keyword and fixed 16 more missing images (Q46, Q49, Q52, Q54, Q71, Q79, Q95, Q117, Q137, Q177, Q220, Q276, Q302, Q313, Q372, Q16)
 - **Data cleanup**: Removed stale `/static/exhibits/q*_img0.jpeg` references and nulled missing paths to prevent 404s.
 
 ### 🔗 NEW: Question Series Grouping ✅
@@ -183,7 +184,7 @@ curl -s http://127.0.0.1:8000/api/dashboard     | jq .
 - `backend/app/services/session_service.py` — Group questions by series, keep related questions together
 - `backend/app/routers/session.py` — Include new fields in API responses
 - `backend/app/main.py` — Static file serving for exhibit images
-- `backend/app/static/exhibits/` — Directory for extracted images (208 images)
+- `backend/app/static/exhibits/` — Directory for extracted images (218 images)
 
 ### Frontend
 - `frontend/src/pages/ExamSession.jsx` — Display exhibit images + preserve paragraph formatting
