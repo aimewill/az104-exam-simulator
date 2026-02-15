@@ -753,7 +753,7 @@ class PDFParser:
                 "following virtual machines", "following storage accounts",
                 "following subscriptions", "contains the following",
                 "following information", "following configuration",
-                "following azure", "following settings"
+                "following azure", "following settings", "following locations"
             ]
             
             for q in questions:

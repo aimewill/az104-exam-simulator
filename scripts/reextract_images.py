@@ -61,7 +61,7 @@ def extract_image_for_question(doc, pdf_page_num: int, question: Question) -> st
         "following users", "following resources", "following table",
         "following virtual machines", "following storage accounts",
         "following subscriptions", "contains the following",
-        "shown in the following", "contains the resources shown"
+        "shown in the following", "contains the resources shown", "following locations"
     ])
 
     best = None  # (score, bytes, ext, width, height, page_idx, img_index)
