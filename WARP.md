@@ -66,6 +66,18 @@ curl -s http://127.0.0.1:8000/api/dashboard     | jq .
   - `backend/app/routers/dashboard.py` — Added unseen_questions, seen_questions, exam_questions
   - `frontend/src/pages/Dashboard.jsx` — Progress bar and unseen count display
 
+### 📚 NEW: Study Mode Coverage Tracking ✅
+- **Feature**: Track which study questions (DRAG DROP/HOTSPOT) you've reviewed
+- **How it works**:
+  - Study Mode shows coverage progress bar (X of 221 seen)
+  - Questions marked as "seen" when you navigate to next question
+  - Navigator shows green for seen questions, gray for unseen
+  - API endpoint: `POST /api/session/study/{id}/seen`
+- **Files touched**:
+  - `backend/app/routers/session.py` — Added `/study/{id}/seen` endpoint, returns seen/unseen counts
+  - `frontend/src/api/client.js` — Added `markStudySeen()` method
+  - `frontend/src/pages/StudySession.jsx` — Coverage tracking UI
+
 ### 🔐 NEW: User Authentication ✅
 - **Feature**: User login/registration system for tracking individual progress
 - **How it works**:
