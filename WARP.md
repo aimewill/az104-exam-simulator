@@ -129,9 +129,10 @@ curl -s http://127.0.0.1:8000/api/dashboard     | jq .
   - Table images detected by dimensions (wide, short aspect ratio)
   - Saves images to `backend/app/static/exhibits/` with unique filenames
   - Displays images above question text in exam and results pages
-- **Result**: 208 questions now show their correct images (99.5% accuracy)
+- **Result**: 210 questions now show their correct images
 - **Files**: Images served via FastAPI StaticFiles at `/static/exhibits/`
 - **Feb 13 Fix**: Complete rewrite of image extraction to match question text to actual PDF pages (fixed 145 mismatches)
+- **Feb 15 Fix**: Re-extracted all 210 images with `scripts/reextract_images.py` to fix remaining mismatches (e.g., Q327/Q328 showing wrong VM table)
 
 ### 🔗 NEW: Question Series Grouping ✅
 - **Feature**: Related questions (same scenario) now appear consecutively
@@ -239,6 +240,16 @@ python scripts/migrate_to_railway.py "<POSTGRES_URL_FROM_STEP_2>"
 railway link  # Select az104-exam-simulator
 railway up --detach
 ```
+
+### ⚠️ After re-extracting images locally
+If you re-run `scripts/reextract_images.py` locally, you must ALSO update Railway:
+1. Push new image files to git: `git add -A && git commit && git push`
+2. Deploy to Railway: `railway up --detach`
+3. Update Railway DB image paths:
+   ```bash
+   python scripts/update_railway_images.py "<POSTGRES_PUBLIC_URL>"
+   ```
+   (The local SQLite has new paths, but Railway PostgreSQL needs to be synced)
 
 ---
 

@@ -241,6 +241,29 @@ Edit `config/domains.json` to customize domain keywords:
 - Images are only extracted for questions referencing "exhibit" keywords
 - Clear browser cache if images don't update after re-import
 
+### Exhibit Images Showing Wrong Content
+
+If an exhibit image shows data that doesn't match the question (e.g., Q327 about VM1/VNET1 shows a table with VM3/VM4/VM5):
+
+1. **Re-extract images locally:**
+   ```bash
+   source venv/bin/activate
+   python scripts/reextract_images.py
+   ```
+
+2. **Push new images to Git and redeploy:**
+   ```bash
+   git add -A && git commit -m "Re-extract images" && git push
+   railway up --detach
+   ```
+
+3. **Update Railway PostgreSQL with new paths:**
+   ```bash
+   python scripts/update_railway_images.py "<POSTGRES_PUBLIC_URL>"
+   ```
+
+This happens because the image extraction must match question text to the correct PDF page, and Railway's PostgreSQL database needs to be synced with the new image paths.
+
 ### Question Series Not Grouping
 
 - Series detection looks for "Note: The question is included in a number of questions..."
