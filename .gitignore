@@ -32,8 +32,8 @@ data/
 # PDFs (user content, not tracked)
 pdfs/*.pdf
 
-# Exhibit images (generated from PDFs)
-backend/app/static/exhibits/
+# Exhibit images - included in repo for Railway deployment
+# (To regenerate locally: POST /api/import/scan then /api/import/run)
 
 # IDE
 .idea/
