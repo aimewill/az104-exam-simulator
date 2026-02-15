@@ -724,7 +724,14 @@ class PDFParser:
         return 0
     
     def _extract_and_link_images(self, filepath: Path, questions: List[ParsedQuestion], text_by_page: Dict[int, str]):
-        """Extract images from PDF and link them to questions with exhibits or table images."""
+        """Extract images from PDF and link them to questions with exhibits or table images.
+        
+        Improvements (Feb 15, 2026):
+        - Consider previous AND next page around the matched question page.
+        - Score all candidate images and pick the best one instead of the first.
+        - Prefer table-like images for table keywords; otherwise prefer largest exhibit.
+        - Skip tiny icons; use stable_id in filenames for idempotency.
+        """
         try:
             import fitz  # PyMuPDF
         except ImportError:
@@ -750,67 +757,77 @@ class PDFParser:
             ]
             
             for q in questions:
-                # Check if question references an exhibit or table data
                 q_text_lower = q.text.lower()
-                has_exhibit = any(keyword in q_text_lower for keyword in exhibit_keywords)
-                has_table = any(keyword in q_text_lower for keyword in table_keywords)
-                
-                if not has_exhibit and not has_table:
+                expects_table = any(keyword in q_text_lower for keyword in table_keywords)
+                has_exhibit_hint = any(keyword in q_text_lower for keyword in exhibit_keywords) or expects_table
+                if not has_exhibit_hint:
                     continue
                 
-                # Find the actual PDF page containing this question
+                # Find the actual PDF page containing this question text
                 # (source_page is the question number, not the PDF page number)
                 pdf_page_num = self._find_pdf_page_for_question(q.text, text_by_page)
                 if not pdf_page_num or pdf_page_num == 0:
                     continue
                 
-                # Try to extract images from the page (0-indexed in PyMuPDF)
-                page = doc[pdf_page_num - 1]
-                image_list = page.get_images(full=True)
+                # Build list of candidate pages: current, previous, next
+                cand_pages = [pdf_page_num - 1]
+                if pdf_page_num > 1:
+                    cand_pages.append(pdf_page_num - 2)
+                if pdf_page_num < len(doc):
+                    cand_pages.append(pdf_page_num)  # next (0-index add later)
                 
-                if not image_list:
-                    # Try previous page (exhibit might be on page before question)
-                    if pdf_page_num > 1:
-                        page = doc[pdf_page_num - 2]
-                        image_list = page.get_images(full=True)
+                # Collect candidate images with a score
+                best = None  # (score, filename, width, height)
+                for pidx in sorted(set(cand_pages)):
+                    if pidx < 0 or pidx >= len(doc):
+                        continue
+                    page = doc[pidx]
+                    for img_index, img in enumerate(page.get_images(full=True)):
+                        xref = img[0]
+                        base_image = doc.extract_image(xref)
+                        image_bytes = base_image["image"]
+                        image_ext = base_image["ext"]
+                        width = base_image.get("width", 0)
+                        height = base_image.get("height", 0)
+                        size = len(image_bytes)
+                        
+                        # Skip tiny icons/logos (less than 5KB)
+                        if size < 5000:
+                            continue
+                        
+                        # Table-like images (wide, short)
+                        table_like = width > 300 and height > 50 and width / max(height, 1) > 1.5
+                        
+                        # Base score from size (prefer larger)
+                        score = size / 10000.0
+                        
+                        # Strongly prefer table-like when table is expected
+                        if expects_table and table_like:
+                            score += 5.0
+                        elif table_like:
+                            score += 1.0
+                        
+                        # Slightly prefer images on the matched page
+                        if pidx == pdf_page_num - 1:
+                            score += 0.5
+                        
+                        # Filename
+                        stable_suffix = getattr(q, 'stable_id', '')[:8]
+                        filename = f"q{q.source_page}_{stable_suffix}_img{pidx}_{img_index}.{image_ext}"
+                        filepath_img = self.exhibits_dir / filename
+                        
+                        if best is None or score > best[0]:
+                            best = (score, filename, image_bytes, width, height)
                 
-                # Save the first sizeable image found
-                for img_index, img in enumerate(image_list):
-                    xref = img[0]
-                    base_image = doc.extract_image(xref)
-                    image_bytes = base_image["image"]
-                    image_ext = base_image["ext"]
-                    width = base_image.get("width", 0)
-                    height = base_image.get("height", 0)
-                    
-                    # Skip tiny icons/logos (less than 5KB)
-                    if len(image_bytes) < 5000:
-                        continue
-                    
-                    # For table-type images: accept wide, short images (typical table dimensions)
-                    # These are often 400-800px wide and 100-300px tall
-                    is_table_like = width > 300 and height > 50 and width / max(height, 1) > 1.5
-                    
-                    # For exhibit images: require larger size (10KB+)
-                    is_exhibit = len(image_bytes) >= 10000
-                    
-                    if not is_table_like and not is_exhibit:
-                        continue
-                    
-                    # Generate unique filename using stable_id for uniqueness
-                    stable_suffix = q.stable_id[:8] if hasattr(q, 'stable_id') else ''
-                    filename = f"q{q.source_page}_{stable_suffix}_img{img_index}.{image_ext}"
-                    filepath_img = self.exhibits_dir / filename
-                    
-                    # Save image
-                    with open(filepath_img, "wb") as img_file:
-                        img_file.write(image_bytes)
-                    
-                    # Link to question (relative path for web serving)
-                    q.exhibit_image = f"/static/exhibits/{filename}"
-                    img_type = "table" if is_table_like else "exhibit"
-                    logger.info(f"Extracted {img_type} image for Q{q.source_page}: {filename} ({width}x{height})")
-                    break  # Only save first meaningful image per question
+                if best is None:
+                    continue
+                
+                # Save best image
+                score, filename, image_bytes, width, height = best
+                with open(self.exhibits_dir / filename, "wb") as img_file:
+                    img_file.write(image_bytes)
+                q.exhibit_image = f"/static/exhibits/{filename}"
+                logger.info(f"Linked image for Q{q.source_page}: {filename} ({width}x{height}, score={score:.2f})")
             
             doc.close()
         except Exception as e:

@@ -45,22 +45,32 @@ def find_pdf_page_for_question(question_text: str, doc) -> int:
 
 
 def extract_image_for_question(doc, pdf_page_num: int, question: Question) -> str:
-    """Extract the best image from a PDF page for a question."""
+    """Extract the best image from surrounding pages using a scoring heuristic."""
     if pdf_page_num < 1:
         return None
-    
-    # Try the question's page first, then previous page
-    pages_to_try = [pdf_page_num - 1]  # 0-indexed
+
+    # Candidate pages: found page (0-indexed), previous, next
+    pages_to_try = [pdf_page_num - 1]
     if pdf_page_num > 1:
         pages_to_try.append(pdf_page_num - 2)
-    
-    for page_idx in pages_to_try:
+    if pdf_page_num < len(doc):
+        pages_to_try.append(pdf_page_num)  # next page
+
+    q_text_lower = question.text.lower()
+    expects_table = any(kw in q_text_lower for kw in [
+        "following users", "following resources", "following table",
+        "following virtual machines", "following storage accounts",
+        "following subscriptions", "contains the following",
+        "shown in the following", "contains the resources shown"
+    ])
+
+    best = None  # (score, bytes, ext, width, height, page_idx, img_index)
+
+    for page_idx in sorted(set(pages_to_try)):
         if page_idx < 0 or page_idx >= len(doc):
             continue
-            
         page = doc[page_idx]
         image_list = page.get_images(full=True)
-        
         for img_index, img in enumerate(image_list):
             xref = img[0]
             try:
@@ -69,34 +79,42 @@ def extract_image_for_question(doc, pdf_page_num: int, question: Question) -> st
                 image_ext = base_image["ext"]
                 width = base_image.get("width", 0)
                 height = base_image.get("height", 0)
-                
+                size = len(image_bytes)
+
                 # Skip tiny icons
-                if len(image_bytes) < 5000:
+                if size < 5000:
                     continue
-                
+
                 # Table-like images (wide and short)
                 is_table_like = width > 300 and height > 50 and width / max(height, 1) > 1.5
-                is_exhibit = len(image_bytes) >= 10000
-                
-                if not is_table_like and not is_exhibit:
-                    continue
-                
-                # Generate filename with stable_id
-                stable_suffix = question.stable_id[:8] if question.stable_id else str(question.id)
-                filename = f"q{question.source_page}_{stable_suffix}_img{img_index}.{image_ext}"
-                filepath = EXHIBITS_DIR / filename
-                
-                # Save image
-                with open(filepath, "wb") as f:
-                    f.write(image_bytes)
-                
-                return f"/static/exhibits/{filename}"
-                
+
+                # Scoring: prefer table-like if expected, otherwise largest
+                score = size / 10000.0
+                if expects_table and is_table_like:
+                    score += 5.0
+                elif is_table_like:
+                    score += 1.0
+                if page_idx == pdf_page_num - 1:
+                    score += 0.5
+
+                if not best or score > best[0]:
+                    best = (score, image_bytes, image_ext, width, height, page_idx, img_index)
             except Exception as e:
                 print(f"  Error extracting image: {e}")
                 continue
-    
-    return None
+
+    if not best:
+        return None
+
+    _, image_bytes, image_ext, width, height, page_idx, img_index = best
+    stable_suffix = question.stable_id[:8] if question.stable_id else str(question.id)
+    filename = f"q{question.source_page}_{stable_suffix}_img{page_idx}_{img_index}.{image_ext}"
+    filepath = EXHIBITS_DIR / filename
+
+    with open(filepath, "wb") as f:
+        f.write(image_bytes)
+
+    return f"/static/exhibits/{filename}"
 
 
 def main():
