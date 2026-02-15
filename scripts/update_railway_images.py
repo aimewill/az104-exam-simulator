@@ -23,14 +23,18 @@ from backend.app.database import SessionLocal
 from backend.app.models import Question
 
 local_db = SessionLocal()
-local_questions = local_db.query(Question).filter(Question.exhibit_image.isnot(None)).all()
+# Split local rows into with-image and without-image (NULL)
+with_image = local_db.query(Question).filter(Question.exhibit_image.isnot(None)).all()
+without_image = local_db.query(Question).filter(Question.exhibit_image.is_(None)).all()
 
-print(f"Found {len(local_questions)} questions with images in local DB")
+print(f"Found {len(with_image)} questions with images in local DB")
+print(f"Found {len(without_image)} questions with NULL images in local DB")
 
 # Update Railway
 with engine.connect() as conn:
     updated = 0
-    for q in local_questions:
+    cleared = 0
+    for q in with_image:
         # Update by stable_id to match questions across databases
         result = conn.execute(
             text("UPDATE questions SET exhibit_image = :img WHERE stable_id = :sid"),
@@ -38,8 +42,17 @@ with engine.connect() as conn:
         )
         if result.rowcount > 0:
             updated += 1
+
+    # Clear images where local is NULL
+    for q in without_image:
+        result = conn.execute(
+            text("UPDATE questions SET exhibit_image = NULL WHERE stable_id = :sid"),
+            {"sid": q.stable_id}
+        )
+        if result.rowcount > 0:
+            cleared += 1
     conn.commit()
-    print(f"Updated {updated} questions in Railway PostgreSQL")
+    print(f"Updated {updated} and cleared {cleared} questions in Railway PostgreSQL")
 
 local_db.close()
 print("Done!")
