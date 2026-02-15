@@ -139,14 +139,17 @@ function Dashboard() {
 
       <div className="grid grid-4">
         <div className="card stat-card">
-          <div className="value">{overview.total_questions}</div>
-          <div className="label">Total Questions</div>
+          <div className="value">{overview.exam_questions || overview.total_questions}</div>
+          <div className="label">Exam Questions</div>
+          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+            +{overview.total_questions - (overview.exam_questions || overview.total_questions)} study
+          </div>
         </div>
         <div className="card stat-card">
           <div className="value" style={{ color: overview.unseen_questions > 0 ? 'var(--primary)' : 'var(--success)' }}>
             {overview.unseen_questions || 0}
           </div>
-          <div className="label">Unseen Questions</div>
+          <div className="label">Unseen</div>
           <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px' }}>
             {overview.seen_questions || 0} seen
           </div>
